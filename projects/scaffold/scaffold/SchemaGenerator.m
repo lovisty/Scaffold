@@ -1041,17 +1041,37 @@ DEF_INT( TYPE_OBJECT,		6 )
 	{
 		BOOL found = NO;
 		
+        NSMutableDictionary *convertDict = [[NSMutableDictionary alloc] init];
 		for ( SchemaProperty * property in self.properties )
 		{
 			if ( property.type == SchemaProperty.TYPE_ARRAY )
 			{
 				if ( property.elemType == SchemaProperty.TYPE_OBJECT )
 				{
-					code.LINE( @"CONVERT_PROPERTY_CLASS( %@, %@%@ );", property.name, prefix, property.elemClass );
+                    NSString *propertyClass = [NSString stringWithFormat:@"%@%@", prefix, property.elemClass];
+                    [convertDict setObject:propertyClass forKey:property.name];
 					found = YES;
 				}
 			}
 		}
+
+        if (convertDict.allKeys.count) {
+            code.LINE(@"+ (NSDictionary *)mj_objectClassInArray");
+            code.LINE(@"{");
+            code.LINE(@"\treturn @{");
+            NSInteger i = 0;
+            for (NSString *key in convertDict.allKeys) {
+                i++;
+                if (i == convertDict.allKeys.count) {
+                    code.LINE(@"\t\t\t@\"%@\": [%@ class]",key,convertDict[key]);
+                }else{
+                    code.LINE(@"\t\t\t@\"%@\": [%@ class],",key,convertDict[key]);
+                }
+            }
+            code.LINE(@"\t\t\t};");
+            code.LINE(@"}");
+        }
+       
 		
 		if ( found )
 		{
