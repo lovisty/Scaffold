@@ -955,11 +955,16 @@ DEF_INT( TYPE_OBJECT,		6 )
 	{
 		if ( self.isActiveRecord )
 		{
-			code.LINE( @"@interface %@%@ : %@", prefix, self.className, @"BeeActiveRecord" );
+            code.LINE( @"@interface %@%@ : %@", prefix, self.className, self.protocol.respSuperclass);
 		}
 		else
 		{
-			code.LINE( @"@interface %@%@ : %@", prefix, self.className, @"BeeActiveObject" );
+            //是否包含 RESP or REQ
+            if ([self.className hasPrefix:@"RESP"]) {
+                code.LINE( @"@interface %@%@ : %@", prefix, self.className, self.protocol.respSuperclass );
+            }else{
+                code.LINE( @"@interface %@%@ : %@", prefix, self.className, self.protocol.modelSuperclass );
+            }
 		}
 	}
 	
@@ -970,36 +975,46 @@ DEF_INT( TYPE_OBJECT,		6 )
 			SchemaEnum * enums = [self.protocol enumByName:property.elemClass];
 			if ( enums && enums.isString )
 			{
-				code.LINE( @"@property (nonatomic, retain) NSString *\t\t\t%@;", property.name );
+				code.LINE( @"@property (nonatomic, strong) NSNumber *\t/* %@%@ */\t%@;",prefix,property.elemClass, property.name );
 			}
 			else
 			{
-				code.LINE( @"@property (nonatomic, retain) NSNumber *\t\t\t%@;", property.name );
+				code.LINE( @"@property (nonatomic, strong) NSNumber *\t/* %@%@ */\t%@;",prefix,property.elemClass, property.name );
 			}
 		}
 		else if ( property.type == SchemaProperty.TYPE_NUMBER )
 		{
-			code.LINE( @"@property (nonatomic, retain) NSNumber *\t\t\t%@;", property.name );
+			code.LINE( @"@property (nonatomic, strong) NSNumber *\t\t\t%@;", property.name );
 		}
 		else if ( property.type == SchemaProperty.TYPE_STRING )
 		{
-			code.LINE( @"@property (nonatomic, retain) NSString *\t\t\t%@;", property.name );
+            if(property.elemClass){
+                code.LINE( @"@property (nonatomic, strong) NSString \t<%@%@>\t*%@;",prefix, property.elemClass);
+            }else{
+                code.LINE( @"@property (nonatomic, strong) NSString *\t\t\t%@;", property.name );
+            }
+			
 		}
 		else if ( property.type == SchemaProperty.TYPE_ARRAY )
 		{
-			code.LINE( @"@property (nonatomic, retain) NSArray *\t\t\t\t%@;", property.name );
+            if (property.elemClass) {
+                code.LINE( @"@property (nonatomic, strong) NSArray \t<%@%@ *>\t*%@;", prefix, property.elemClass, property.name );
+            }else{
+                code.LINE( @"@property (nonatomic, strong) NSArray *\t\t\t%@;", property.name );
+            }
+			
 		}
 		else if ( property.type == SchemaProperty.TYPE_DICTIONARY )
 		{
-			code.LINE( @"@property (nonatomic, retain) NSDictionary *\t\t\t%@;", property.name );
+			code.LINE( @"@property (nonatomic, strong) NSDictionary *\t\t\t%@;", property.name );
 		}
 		else if ( property.type == SchemaProperty.TYPE_OBJECT )
 		{
-			code.LINE( @"@property (nonatomic, retain) %@%@ *\t\t\t%@;", prefix, property.elemClass, property.name );
+			code.LINE( @"@property (nonatomic, strong) %@%@ *\t\t\t%@;", prefix, property.elemClass, property.name );
 		}
 		else
 		{
-			code.LINE( @"@property (nonatomic, retain) NSObject *\t\t\t%@;", property.name );
+			code.LINE( @"@property (nonatomic, strong) NSObject *\t\t\t%@;", property.name );
 		}
 	}
 	
@@ -1016,21 +1031,14 @@ DEF_INT( TYPE_OBJECT,		6 )
 	NSString *			prefix = self.protocol.prefix;
 	NSMutableString *	code = [NSMutableString string];
 	
-	code.LINE( @"#pragma mark - %@%@", prefix, self.className );
-	code.LINE( nil );
+//    code.LINE( @"#pragma mark - %@%@", prefix, self.className );
+//    code.LINE( nil );
 	
 	code.LINE( @"@implementation %@%@", prefix, self.className );
 	code.LINE( nil );
 	
 	if ( self.properties && self.properties.count )
 	{
-		for ( SchemaProperty * property in self.properties )
-		{
-			code.LINE( @"@synthesize %@ = _%@;", property.name, property.name );
-		}
-		
-		code.LINE( nil );
-		
 		BOOL found = NO;
 		
 		for ( SchemaProperty * property in self.properties )
@@ -1096,9 +1104,9 @@ DEF_INT( TYPE_OBJECT,		6 )
 		}
 	}
 	
-//	code.LINE( @"- (BOOL)validate" );
-//	code.LINE( @"{" );
-//	
+    code.LINE( @"- (BOOL)validate" );
+    code.LINE( @"{" );
+//
 //	if ( self.properties.count )
 //	{
 //		for ( SchemaProperty * property in self.properties )
@@ -1201,9 +1209,9 @@ DEF_INT( TYPE_OBJECT,		6 )
 //		}
 //	}
 //	
-//	code.LINE( @"	return YES;" );
-//	code.LINE( @"}" );
-//	code.LINE( nil );
+    code.LINE( @"    return YES;" );
+    code.LINE( @"}" );
+    code.LINE( nil );
 	
 	code.LINE( @"@end" );
 	return code;
@@ -1633,6 +1641,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 	NSMutableDictionary *	request = [value objectForKey:@"request"];
 	NSDictionary *	response = [value objectForKey:@"response"];
     NSDictionary *  fileParam = [value objectForKey:@"fileList"];
+    NSString *comment = [value objectForKey:@"comment"];
     
 	if ( nil == method )
 	{
@@ -1652,6 +1661,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 		controller.method = method;
 		controller.url = url;
         controller.fileParam = fileParam;
+        controller.comment = comment;
 		NSString * key = [controller methodName];
 		NSString * reqKey = [[NSString stringWithFormat:@"REQ_%@", key] uppercaseString];
 		NSString * rspKey = [[NSString stringWithFormat:@"RESP_%@", key] uppercaseString];
@@ -1919,7 +1929,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 	NSMutableString *	code = [NSMutableString string];
 	NSString *			prefix = self.protocol.prefix;
 	
-	code.LINE( @"#pragma mark - %@ %@", self.method, self.url );
+	code.LINE( @"#pragma mark - %@ %@ %@", self.method, self.url, self.comment);
 	code.LINE( nil );
 	
 	if ( self.request && self.request.properties.count )
@@ -1982,30 +1992,30 @@ DEF_INT( TYPE_OBJECT,		6 )
         }
     }
     
-	code.LINE( @"@interface %@%@ : BeeAPI", prefix, msgKey );
+	code.LINE( @"@interface %@%@ : %@", prefix, msgKey,self.protocol.apiSuperclass);
 	
 	NSArray * params = [self methodParams];
 	for ( NSString * param in params )
 	{
 		NSString * name = [param.trim substringFromIndex:1];
-		code.LINE( @"@property (nonatomic, retain) NSString *	%@;", name );
+		code.LINE( @"@property (nonatomic, strong) NSString *	%@;", name );
 	}
 	
 	if ( self.request && self.request.properties.count )
 	{
 		if ( self.request.isContainer )
 		{
-			code.LINE( @"@property (nonatomic, retain) %@%@ *	req;", prefix, reqKey );
+			code.LINE( @"@property (nonatomic, strong) %@%@ *	req;", prefix, reqKey );
 		}
 		else
 		{
 			if ( self.request.isArray )
 			{
-				code.LINE( @"@property (nonatomic, retain) NSArray *	req;" );
+				code.LINE( @"@property (nonatomic, strong) NSArray *	req;" );
 			}
 			else
 			{
-				code.LINE( @"@property (nonatomic, retain) %@%@ *	req;", prefix, reqKey );
+				code.LINE( @"@property (nonatomic, strong) %@%@ *	req;", prefix, reqKey );
 			}
 		}
 	}
@@ -2014,17 +2024,17 @@ DEF_INT( TYPE_OBJECT,		6 )
 	{
 		if ( self.response.isContainer )
 		{
-			code.LINE( @"@property (nonatomic, retain) %@%@ *	resp;", prefix, rspKey );
+			code.LINE( @"@property (nonatomic, strong) %@%@ *	resp;", prefix, rspKey );
 		}
 		else
 		{
 			if ( self.response.isArray )
 			{
-				code.LINE( @"@property (nonatomic, retain) NSArray *	resp;" );
+				code.LINE( @"@property (nonatomic, strong) NSArray *	resp;" );
 			}
 			else
 			{
-				code.LINE( @"@property (nonatomic, retain) %@%@ *	resp;", prefix, rspKey );
+				code.LINE( @"@property (nonatomic, strong) %@%@ *	resp;", prefix, rspKey );
 			}
 		}
 	}
@@ -2033,17 +2043,17 @@ DEF_INT( TYPE_OBJECT,		6 )
     {
         if ( self.fileList.isContainer )
         {
-            code.LINE( @"@property (nonatomic, retain) %@%@ *	fileList;", prefix, flistKey );
+            code.LINE( @"@property (nonatomic, strong) %@%@ *	fileList;", prefix, flistKey );
         }
         else
         {
             if ( self.fileList.isArray )
             {
-                code.LINE( @"@property (nonatomic, retain) NSArray *	fileList;" );
+                code.LINE( @"@property (nonatomic, strong) NSArray *	fileList;" );
             }
             else
             {
-                code.LINE( @"@property (nonatomic, retain) %@%@ *	fileList;", prefix, flistKey );
+                code.LINE( @"@property (nonatomic, strong) %@%@ *	fileList;", prefix, flistKey );
             }
         }
     }
@@ -2058,7 +2068,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 	NSMutableString *	code = [NSMutableString string];
 	NSString *			prefix = self.protocol.prefix;
 	
-	code.LINE( @"#pragma mark - %@ %@", self.method, self.url );
+	code.LINE( @"#pragma mark - %@ %@ %@", self.method, self.url, self.comment);
 	code.LINE( nil );
 	
 	if ( self.request && self.request.properties.count )
@@ -2130,15 +2140,9 @@ DEF_INT( TYPE_OBJECT,		6 )
 		code.LINE( @"@synthesize %@ = _%@;", name, name );
 	}
 	
-	if ( self.request && self.request.properties.count )
-	{
-		code.LINE( @"@synthesize req = _req;" );
-	}
+	code.LINE( @"@synthesize req = _req;" );
 	
-	if ( self.response && self.response.properties.count )
-	{
-		code.LINE( @"@synthesize resp = _resp;" );
-	}
+	code.LINE( @"@synthesize resp = _resp;" );
     
     if ( self.fileList && self.fileList.properties.count )
     {
@@ -2155,7 +2159,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 	
 	if ( self.request && self.request.properties.count )
 	{
-		code.LINE( @"		self.req = [[[%@%@ alloc] init] autorelease];", prefix, reqKey );
+		code.LINE( @"		self.req = [%@%@ new];", prefix, reqKey );
 	}
 	
 	if ( self.response && self.response.properties.count )
@@ -2166,7 +2170,7 @@ DEF_INT( TYPE_OBJECT,		6 )
     
     if ( self.fileList && self.fileList.properties.count )
     {
-        code.LINE( @"		self.fileList = [[[%@%@ alloc] init] autorelease];", prefix, flistKey );
+        code.LINE( @"		self.fileList = [%@%@ new];", prefix, flistKey );
     }
 	
 	code.LINE( @"	}" );
@@ -2174,190 +2178,30 @@ DEF_INT( TYPE_OBJECT,		6 )
 	code.LINE( @"}" );
 	code.LINE( nil );
 	
-	code.LINE( @"- (void)dealloc" );
-	code.LINE( @"{" );
-	
-	if ( self.request && self.request.properties.count )
-	{
-		code.LINE( @"	self.req = nil;" );
-	}
-	
-	if ( self.response && self.response.properties.count )
-	{
-		code.LINE( @"	self.resp = nil;" );
-	}
-    
-    if (self.fileList && self.fileList.properties.count) {
-        code.LINE( @"	self.fileList = nil;" );
+    code.LINE( @"+ (Class)respClass" );
+    code.LINE( @"{" );
+    if (rspKey) {
+        code.LINE( @"   return [%@%@ class];",prefix, rspKey);
+    }else{
+        code.LINE( @"   return nil");
     }
-	
-	code.LINE( @"	[super dealloc];" );
-	code.LINE( @"}" );
+    code.LINE( @"}" );
 	code.LINE( nil );
-	
-	code.LINE( @"- (void)routine" );
-	code.LINE( @"{" );
-	code.LINE( @"	if ( self.sending )" );
-	code.LINE( @"	{" );
-	
-	if ( self.request && self.request.properties.count )
-	{
-		if ( self.request.isContainer )
-		{
-			code.LINE( @"		if ( nil == self.req || NO == [self.req validate] )" );
-			code.LINE( @"		{" );
-			code.LINE( @"			self.failed = YES;" );
-			code.LINE( @"			return;" );
-			code.LINE( @"		}" );
-			code.LINE( nil );
-		}
-		else
-		{
-			code.LINE( @"		if ( nil == self.req )" );
-			code.LINE( @"		{" );
-			code.LINE( @"			self.failed = YES;" );
-			code.LINE( @"			return;" );
-			code.LINE( @"		}" );
-			code.LINE( nil );
-		}
-	}
-	
-	if ( params && params.count )
-	{
-		for ( NSString * param in params )
-		{
-			NSString * name = [param.trim substringFromIndex:1];
-			
-			code.LINE( @"		if ( NULL == self.%@ )", name );
-			code.LINE( @"		{" );
-			code.LINE( @"			self.failed = YES;" );
-			code.LINE( @"			return;" );
-			code.LINE( @"		}" );
-			code.LINE( nil );
-		}
-	}
-	
-	if ( [self.url hasPrefix:@"http://"] || [self.url hasPrefix:@"https://"] )
-	{
-		code.LINE( @"		NSString * requestURI = @\"%@\";", self.url );
-	}
-	else
-	{
-		code.LINE( @"		NSString * requestURI = [[%@ServerConfig sharedInstance].url stringByAppendingString:@\"%@\"];", prefix, self.url );
-	}
-	
-	if ( params && params.count )
-	{
-		for ( NSString * param in params )
-		{
-			NSString * name = [param.trim substringFromIndex:1];
-			code.LINE( @"		requestURI = [requestURI stringByReplacingOccurrencesOfString:@\"%@\" withString:self.%@];", param, name );
-		}
-		
-		code.LINE( nil );
-	}
-	
-	if ( self.request && self.request.properties.count )
-	{
-		if ( NSOrderedSame == [self.method compare:@"GET" options:NSCaseInsensitiveSearch] )
-		{
-			code.LINE( @"		self.HTTP_%@( requestURI ).PARAM( [self.req objectToDictionary] );", [self.method uppercaseString] );
-		}
-		else
-		{
-            //philZhang todo
-            NSString *fileListParam = @"";
-            if (self.fileParam != nil) {
-                for (NSString *key in self.fileParam) {
-                    if ( NSOrderedSame == [[[self.fileParam objectForKey:key] uppercaseString] compare:@"{JPG}" options:NSCaseInsensitiveSearch] )
-                    {
-                        fileListParam = [NSString stringWithFormat:@"%@.FILE_JPG(@\"%@\", self.fileList.%@)", fileListParam, key, key];
-                    }else if (NSOrderedSame == [[[self.fileParam objectForKey:key] uppercaseString] compare:@"{PNG}" options:NSCaseInsensitiveSearch])
-                    {
-                        fileListParam = [NSString stringWithFormat:@"%@.FILE_PNG(@\"%@\", self.fileList.%@)", fileListParam, key, key];
-                    }
-                    else if (NSOrderedSame == [[[self.fileParam objectForKey:key] uppercaseString] compare:@"{FILE}" options:NSCaseInsensitiveSearch])
-                    {
-                        fileListParam = [NSString stringWithFormat:@"%@.FILE(@\"%@\", self.fileList.%@)", fileListParam, key, key];
-                    }
-                }
-            }
-			code.LINE( @"		self.HTTP_%@( requestURI ).PARAM(@\"json\", [self.req objectToDictionary] )%@;", [self.method uppercaseString], fileListParam );
-		}
-	}
-	else
-	{
-		code.LINE( @"		self.HTTP_%@( requestURI );", [self.method uppercaseString] );
-	}
-	
-	code.LINE( @"	}" );
-	code.LINE( @"	else if ( self.succeed )" );
-	code.LINE( @"	{" );
-	
-	if ( self.response && self.response.properties.count )
-	{
-		code.LINE( @"		NSObject * result = self.responseJSON;" );
-		code.LINE( nil );
-		
-		if ( self.response.isContainer )
-		{
-			code.LINE( @"		if ( result && [result isKindOfClass:[NSDictionary class]] )" );
-			code.LINE( @"		{" );
-			code.LINE( @"			self.resp = [%@%@ objectFromDictionary:(NSDictionary *)result];", prefix, rspKey );
-			code.LINE( @"		}" );
-			code.LINE( nil );
-			
-			code.LINE( @"		if ( nil == self.resp || NO == [self.resp validate] )" );
-			code.LINE( @"		{" );
-			code.LINE( @"			self.failed = YES;" );
-			code.LINE( @"			return;" );
-			code.LINE( @"		}" );
-		}
-		else
-		{
-			if ( self.response.isArray )
-			{
-				code.LINE( @"		if ( result && [result isKindOfClass:[NSArray class]] )" );
-				code.LINE( @"		{" );
-				code.LINE( @"			self.resp = [%@%@ objectsFromArray:(NSArray *)result];", prefix, rspKey );
-				code.LINE( @"		}" );
-				code.LINE( nil );
-			}
-			else
-			{
-				code.LINE( @"		if ( result && [result isKindOfClass:[%@%@ class]] )", prefix, rspKey );
-				code.LINE( @"		{" );
-				code.LINE( @"			self.resp = (%@%@ *)result;", prefix, rspKey );
-				code.LINE( @"		}" );
-				code.LINE( @"		else if ( result && [result isKindOfClass:[NSDictionary class]] )" );
-				code.LINE( @"		{" );
-				code.LINE( @"			self.resp = [%@%@ objectFromDictionary:(NSDictionary *)result];", prefix, rspKey );
-				code.LINE( @"		}" );
-				code.LINE( nil );
-			}
-			
-			code.LINE( @"		if ( nil == self.resp )" );
-			code.LINE( @"		{" );
-			code.LINE( @"			self.failed = YES;" );
-			code.LINE( @"			return;" );
-			code.LINE( @"		}" );
-		}
-	}
-	else
-	{
-		code.LINE( @"		// TODO:" );
-	}
-	
-	code.LINE( @"	}" );
-	code.LINE( @"	else if ( self.failed )" );
-	code.LINE( @"	{" );
-	code.LINE( @"		// TODO:" );
-	code.LINE( @"	}" );
-	code.LINE( @"	else if ( self.cancelled )" );
-	code.LINE( @"	{" );
-	code.LINE( @"		// TODO:" );
-	code.LINE( @"	}" );
-	code.LINE( @"}" );
+    
+    code.LINE(@"- (BOOL)prepareParams");
+    code.LINE( @"{" );
+    code.LINE( @"   if ( NO == [super prepareParams] ) {" );
+    code.LINE( @"       return NO;" );
+    code.LINE( @"   }" );
+    code.LINE( nil );
+    code.LINE( @"   NSString *requestURI = @\"%@\"];", self.url );
+    code.LINE( @"   self.path = requestURI;");
+    code.LINE( nil );
+    code.LINE( @"   self.method = @\"%@\";",self.method);
+    code.LINE( @"   return YES;");
+    code.LINE( @"}" );
+    code.LINE( nil );
+
 	
 	code.LINE( @"@end" );
 	
@@ -2463,8 +2307,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 	
 	if ( [firstVal isKindOfClass:[NSNumber class]] )
 	{
-		code.LINE( @"enum %@%@", prefix, self.name );
-		code.LINE( @"{" );
+        code.LINE( @"typedef NS_ENUM(NSInteger, %@%@){", prefix, self.name );
 		
 		NSMutableArray * sortedKeys = [NSMutableArray arrayWithArray:self.values.allKeys];
 		[sortedKeys sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
@@ -2541,7 +2384,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 	
 	// read configuration
 	
-	self.author = [dict stringAtPath:@"author"];
+    self.author = [dict stringAtPath:@"author"];
 	self.title = [dict stringAtPath:@"title"];
 	self.source = [dict stringAtPath:@"source"];
 	self.prefix = [dict stringAtPath:@"prefix"];
@@ -2561,11 +2404,21 @@ DEF_INT( TYPE_OBJECT,		6 )
 	[dict removeObjectForKey:@"server"];
 
 	// start to parse
-	
+    self.imports = [[[NSMutableArray alloc] init] autorelease];
 	self.enums = [[[NSMutableArray alloc] init] autorelease];
 	self.models = [[[NSMutableArray alloc] init] autorelease];
 	self.controllers = [[[NSMutableArray alloc] init] autorelease];
 	
+    NSDictionary * className = [dict dictAtPath:@"meta"];
+    self.modelSuperclass = className[@"model_superclass"];
+    self.respSuperclass = className[@"resp_superclass"];
+    self.apiSuperclass = className[@"api_superclass"];
+    
+    NSArray * imports = [className arrayAtPath:@"imports"];
+    for (NSString *import in imports) {
+        [self.imports addObject:import];
+    }
+    
 	NSDictionary * enums = [dict dictAtPath:@"enum"];
 	if ( enums && enums.count )
 	{
@@ -2615,7 +2468,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 		}
 	}
 	
-	NSDictionary * controller = [dict dictAtPath:@"controller"];
+	NSDictionary * controller = [dict dictAtPath:@"api"];
 	if ( controller && controller.count )
 	{
 		for ( NSString * key in controller.allKeys )
@@ -2718,15 +2571,8 @@ DEF_INT( TYPE_OBJECT,		6 )
 
 - (void)outputHeader:(NSMutableString *)code
 {
-	code.LINE( @"//    												" );
-	code.LINE( @"//    												" );
-	code.LINE( @"//    	 ______    ______    ______					" );
-	code.LINE( @"//    	/\\  __ \\  /\\  ___\\  /\\  ___\\			" );
-	code.LINE( @"//    	\\ \\  __<  \\ \\  __\\_ \\ \\  __\\_		" );
-	code.LINE( @"//    	 \\ \\_____\\ \\ \\_____\\ \\ \\_____\\		" );
-	code.LINE( @"//    	  \\/_____/  \\/_____/  \\/_____/			" );
-	code.LINE( @"//    												" );
-	code.LINE( @"//    												" );
+
+	code.LINE( @"// NDDAPI    												" );
 	code.LINE( @"//    												" );
 	code.LINE( @"// title:  %@", self.title ? self.title : @"" );
 	code.LINE( @"// author: %@", self.author ? self.author : @"unknown" );
@@ -2972,7 +2818,9 @@ DEF_INT( TYPE_OBJECT,		6 )
 	
 	[self outputHeader:code];
 	
-	code.LINE( @"#import \"Bee.h\"" );
+    for (NSString *string in self.imports) {
+        code.LINE(@"%@", string);
+    }
 	code.LINE( nil );
 	
 	if ( self.enums && self.enums.count )
@@ -3000,45 +2848,19 @@ DEF_INT( TYPE_OBJECT,		6 )
 		
 		for ( SchemaModel * model in self.models )
 		{
-			//		code.LINE( @"// %@", model.className );
 			code.LINE( [model h] );
 		}
 	}
 	
 	if ( self.controllers && self.controllers.count )
 	{
-		code.LINE( @"#pragma mark - controllers" );
+		code.LINE( @"#pragma mark - apis" );
 		code.LINE( nil );
 		
 		for ( SchemaController * controller in self.controllers )
 		{
 			code.LINE( [controller h] );
 		}
-		
-		code.LINE( @"#pragma mark - config" );
-		code.LINE( nil );
-		
-		code.LINE( [NSString stringWithFormat:@"@interface %@ServerConfig : NSObject", prefix] );
-		code.LINE( nil );
-		
-		code.LINE( [NSString stringWithFormat:@"AS_SINGLETON( %@ServerConfig )", prefix] );
-		code.LINE( nil );
-		
-		code.LINE( @"AS_INT( CONFIG_DEVELOPMENT )" );
-		code.LINE( @"AS_INT( CONFIG_TEST )" );
-		code.LINE( @"AS_INT( CONFIG_PRODUCTION )" );
-		code.LINE( nil );
-		
-		code.LINE( @"@property (nonatomic, assign) NSUInteger			config;" );
-		code.LINE( nil );
-		
-		code.LINE( @"@property (nonatomic, readonly) NSString *			url;" );
-		code.LINE( @"@property (nonatomic, readonly) NSString *			testUrl;" );
-		code.LINE( @"@property (nonatomic, readonly) NSString *			productionUrl;" );
-		code.LINE( @"@property (nonatomic, readonly) NSString *			developmentUrl;" );
-		code.LINE( nil );
-		
-		code.LINE( @"@end" );
 		code.LINE( nil );
 	}
 	
@@ -3069,77 +2891,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 		{
 			code.LINE( [controller mm] );
 		}
-		
-		NSString * dev = [self.server objectForKey:@"development"];
-		NSString * tst = [self.server objectForKey:@"test"];
-		NSString * pro = [self.server objectForKey:@"production"];
-		
-		code.LINE( @"#pragma mark - config" );
-		code.LINE( nil );
-		
-		code.LINE( [NSString stringWithFormat:@"@implementation %@ServerConfig", prefix] );
-		code.LINE( nil );
-		
-		code.LINE( [NSString stringWithFormat:@"DEF_SINGLETON( %@ServerConfig )", prefix] );
-		code.LINE( nil );
-		
-		code.LINE( @"DEF_INT( CONFIG_DEVELOPMENT,	0 )" );
-		code.LINE( @"DEF_INT( CONFIG_TEST,			1 )" );
-		code.LINE( @"DEF_INT( CONFIG_PRODUCTION,	2 )" );
-		code.LINE( nil );
-		
-		code.LINE( @"@synthesize config = _config;" );
-		code.LINE( @"@dynamic url;" );
-		code.LINE( @"@dynamic testUrl;" );
-		code.LINE( @"@dynamic productionUrl;" );
-		code.LINE( @"@dynamic developmentUrl;" );
-		code.LINE( nil );
-		
-		code.LINE( @"- (NSString *)url" );
-		code.LINE( @"{" );
-		code.LINE( @"	NSString * host = nil;" );
-		code.LINE( nil );
-		code.LINE( @"	if ( self.CONFIG_DEVELOPMENT == self.config )" );
-		code.LINE( @"	{" );
-		code.LINE( @"		host = self.developmentUrl;" );
-		code.LINE( @"	}" );
-		code.LINE( @"	else if ( self.CONFIG_TEST == self.config )" );
-		code.LINE( @"	{" );
-		code.LINE( @"		host = self.testUrl;" );
-		code.LINE( @"	}" );
-		code.LINE( @"	else" );
-		code.LINE( @"	{" );
-		code.LINE( @"		host = self.productionUrl;" );
-		code.LINE( @"	}" );
-		code.LINE( nil );
-		code.LINE( @"	if ( NO == [host hasPrefix:@\"http://\"] && NO == [host hasPrefix:@\"https://\"] )" );
-		code.LINE( @"	{" );
-		code.LINE( @"		host = [@\"http://\" stringByAppendingString:host];" );
-		code.LINE( @"	}" );
-		code.LINE( nil );
-		code.LINE( @"	return host;" );
-		code.LINE( @"}" );
-		code.LINE( nil );
-
-		code.LINE( @"- (NSString *)developmentUrl" );
-		code.LINE( @"{" );
-		code.LINE( [NSString stringWithFormat:@"	return @\"%@\";", dev ? dev : @""] );
-		code.LINE( @"}" );
-		code.LINE( nil );
-		
-		code.LINE( @"- (NSString *)testUrl" );
-		code.LINE( @"{" );
-		code.LINE( [NSString stringWithFormat:@"	return @\"%@\";", tst ? tst : @""] );
-		code.LINE( @"}" );
-		code.LINE( nil );
-		
-		code.LINE( @"- (NSString *)productionUrl" );
-		code.LINE( @"{" );
-		code.LINE( [NSString stringWithFormat:@"	return @\"%@\";", pro ? pro : @""] );
-		code.LINE( @"}" );
-		code.LINE( nil );
-		
-		code.LINE( @"@end" );
+    
 		code.LINE( nil );
 	}
 	
@@ -3170,11 +2922,8 @@ DEF_INT( TYPE_OBJECT,		6 )
 	NSString *	outputFullPath = nil;
 	NSString *	outputFileH = nil;
 	NSString *	outputFileM = nil;
-	NSString *	outputFileDot = nil;
-	NSString *	outputFileDot2 = nil;
-	NSString *	outputFileMD = nil;
 	
-	NSString *	date = [[NSDate now] stringWithDateFormat:@"yyyyMMdd_hhmmss"];
+	NSString *	date = @"HEAD";
 
 	inputFullPath = [NSString stringWithFormat:@"%@/%@", self.inputPath, self.inputFile];
 	inputFullPath = [inputFullPath stringByReplacingOccurrencesOfString:@"//" withString:@"/"];
@@ -3188,9 +2937,6 @@ DEF_INT( TYPE_OBJECT,		6 )
 	
 	outputFileH = [outputFullPath stringByReplacingOccurrencesOfString:inputExtension withString:@".h"];
 	outputFileM = [outputFullPath stringByReplacingOccurrencesOfString:inputExtension withString:@".mm"];
-	outputFileMD = [outputFullPath stringByReplacingOccurrencesOfString:inputExtension withString:@"_doc.md"];
-	outputFileDot = [outputFullPath stringByReplacingOccurrencesOfString:inputExtension withString:@"_doc.dot"];
-	outputFileDot2 = [outputFullPath stringByReplacingOccurrencesOfString:inputExtension withString:@"_schema.dot"];
 	
 	NSString * content = [NSString stringWithContentsOfFile:inputFullPath encoding:NSUTF8StringEncoding error:NULL];
 	if ( nil == content || 0 == content.length )
@@ -3231,22 +2977,13 @@ DEF_INT( TYPE_OBJECT,		6 )
 	
 	NSString * hh = [protocol h];
 	NSString * mm = [protocol mm];
-	NSString * md = [protocol MD];
-	NSString * dot = [protocol DOT];
-	NSString * dot2 = [protocol DOT2];
 	
 	[hh writeToFile:outputFileH atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 	[mm writeToFile:outputFileM atomically:YES encoding:NSUTF8StringEncoding error:NULL];
-	[md writeToFile:outputFileMD atomically:YES encoding:NSUTF8StringEncoding error:NULL];
-	[dot writeToFile:outputFileDot atomically:YES encoding:NSUTF8StringEncoding error:NULL];
-	[dot2 writeToFile:outputFileDot2 atomically:YES encoding:NSUTF8StringEncoding error:NULL];
 	
 	self.results = [NSMutableArray array];
 	[self.results addObject:outputFileH];
 	[self.results addObject:outputFileM];
-	[self.results addObject:outputFileMD];
-	[self.results addObject:outputFileDot];
-	[self.results addObject:outputFileDot2];
 	
 	return YES;
 }

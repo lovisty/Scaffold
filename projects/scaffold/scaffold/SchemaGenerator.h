@@ -173,6 +173,7 @@ AS_INT( TYPE_OBJECT )
 @property (nonatomic, retain) SchemaResponse *		response;
 @property (nonatomic, retain) SchemaFileList *      fileList;
 @property (nonatomic, retain) NSDictionary  *       fileParam;
+@property (nonatomic, retain) NSString *            comment;
 
 @end
 
@@ -195,11 +196,15 @@ AS_INT( TYPE_OBJECT )
 @property (nonatomic, retain) NSString *			source;
 @property (nonatomic, retain) NSString *			prefix;
 @property (nonatomic, retain) NSNumber *			shortName;
+@property (nonatomic, retain) NSString *            modelSuperclass;
+@property (nonatomic, retain) NSString *            respSuperclass;
+@property (nonatomic, retain) NSString *            apiSuperclass;
 
 @property (nonatomic, retain) NSDictionary *		server;
 
 @property (nonatomic, retain) NSMutableArray *		enums;
 @property (nonatomic, retain) NSMutableArray *		models;
+@property (nonatomic, retain) NSMutableArray *      imports;//头文件
 @property (nonatomic, retain) NSMutableArray *		controllers;
 
 @property (nonatomic, retain) NSString *			fileName;
