@@ -2602,7 +2602,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 	code.LINE( @"//    												" );
 	code.LINE( @"// title:  %@", self.title ? self.title : @"" );
 	code.LINE( @"// author: %@", self.author ? self.author : @"unknown" );
-	code.LINE( @"// date:   %@", NSDate.now );
+//    code.LINE( @"// date:   %@", NSDate.now );
 	code.LINE( @"//" );
 	code.LINE( nil );
 }
