@@ -1950,7 +1950,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 	NSMutableString *	code = [NSMutableString string];
 	NSString *			prefix = self.protocol.prefix;
 	
-	code.LINE( @"#pragma mark - %@ %@ %@", self.method, self.url, self.comment);
+    code.LINE( @"#pragma mark - %@ %@ %@", self.method, self.url, self.comment?:@"");
 	code.LINE( nil );
 	
 	if ( self.request && self.request.properties.count )
