@@ -43,32 +43,6 @@
 	[bee.cli argc:argc argv:argv];
 
 	bee.cli.LINE( nil );
-	bee.cli.GREEN().LINE( @"   ______    ______    ______    ______   ______   ______    __       _____		" );
-	bee.cli.GREEN().LINE( @"  /\\  ___\\  /\\  ___\\  /\\  __ \\  /\\  ___\\ /\\  ___\\ /\\  __ \\  /\\ \\     /\\  __ \\	" );
-	bee.cli.GREEN().LINE( @"  \\ \\___  \\ \\ \\ \\____ \\ \\  __ \\ \\ \\  __\\ \\ \\  __\\ \\ \\ \\_\\ \\ \\ \\ \\___ \\ \\ \\_\\ \\	" );
-	bee.cli.GREEN().LINE( @"   \\/\\_____\\ \\ \\_____\\ \\ \\_\\ \\_\\ \\ \\_\\    \\ \\_\\    \\ \\_____\\ \\ \\____\\ \\ \\____-	" );
-	bee.cli.GREEN().LINE( @"    \\/_____/  \\/_____/  \\/_/\\/_/  \\/_/     \\/_/     \\/_____/  \\/____/  \\/____/	" );
-	bee.cli.GREEN().LINE( @"                                    		" );
-	bee.cli.GREEN().LINE( @"                       *              /|	" );
-	bee.cli.GREEN().LINE( @"           +                  +      /_|	" );
-	bee.cli.GREEN().LINE( @"                  '                ____| 	" );
-	bee.cli.GREEN().LINE( @"              *       /\\          (|   ||	" );
-	bee.cli.GREEN().LINE( @"                  +  // \\         (|\\ /||	" );
-	bee.cli.GREEN().LINE( @"     +              //   \\        (| X ||	" );
-	bee.cli.GREEN().LINE( @"            *      /======\\       (|/ \\||	" );
-	bee.cli.GREEN().LINE( @"                  |:.  _  :[_______|\\ /||	" );
-	bee.cli.GREEN().LINE( @"                  |:. (_) :| \\/\\  (| X ||	" );
-	bee.cli.GREEN().LINE( @"                  |:.  _  :|  \\ \\ (|/ \\||	" );
-	bee.cli.GREEN().LINE( @"        +         |:. (_) :|   \\/\\(|\\ /||	" );
-	bee.cli.GREEN().LINE( @"                  |:.     :|    \\ (| X ||	" );
-	bee.cli.GREEN().LINE( @"                 .'\\______/'.    \\(|/ \\||	" );
-	bee.cli.GREEN().LINE( @"                / /'\\____/'\\ \\    (|\\ /||" );
-	bee.cli.GREEN().LINE( @"                |/  /''''\\  \\|    (| X || " );
-	bee.cli.GREEN().LINE( @"             _..--````''````--._  (|/ \\||	" );
-	bee.cli.GREEN().LINE( @"       _.-'``                    ``'-._||	" );
-	bee.cli.GREEN().LINE( @"   _.-'                                ''._	" );
-	bee.cli.GREEN().LINE( @" -'                                        '-" );
-	bee.cli.LINE( nil );
 	
 	[module execute];
 }

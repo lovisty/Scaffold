@@ -1056,7 +1056,8 @@ DEF_INT( TYPE_OBJECT,		6 )
 		}
 
         if (convertDict.allKeys.count) {
-            code.LINE(@"+ (NSDictionary *)mj_objectClassInArray");
+            
+            code.LINE(@"CONVERT_PROPERTY_METHOD");
             code.LINE(@"{");
             code.LINE(@"\treturn @{");
             NSInteger i = 0;
@@ -2203,7 +2204,7 @@ DEF_INT( TYPE_OBJECT,		6 )
     if (rspKey) {
         code.LINE( @"   return [%@%@ class];",prefix, rspKey);
     }else{
-        code.LINE( @"   return nil");
+        code.LINE( @"   return nil;");
     }
     code.LINE( @"}" );
 	code.LINE( nil );
@@ -2214,7 +2215,7 @@ DEF_INT( TYPE_OBJECT,		6 )
     code.LINE( @"       return NO;" );
     code.LINE( @"   }" );
     code.LINE( nil );
-    code.LINE( @"   NSString *requestURI = @\"%@\"];", self.url );
+    code.LINE( @"   NSString *requestURI = @\"%@\";", self.url );
     code.LINE( @"   self.path = requestURI;");
     code.LINE( nil );
     code.LINE( @"   self.method = @\"%@\";",self.method);
