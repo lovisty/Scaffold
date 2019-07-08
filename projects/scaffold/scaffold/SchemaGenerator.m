@@ -2051,8 +2051,13 @@ DEF_INT( TYPE_OBJECT,		6 )
 		{
 			if ( self.response.isArray )
 			{
-				code.LINE( @"@property (nonatomic, strong) NSArray *	resp;" );
-			}
+                SchemaProperty * property = [self.response.properties safeObjectAtIndex:0];
+                if (property.elemClass) {
+                    code.LINE( @"@property (nonatomic, strong) NSArray <%@%@*>  *resp;", prefix, property.elemClass);
+                }else{
+                    code.LINE( @"@property (nonatomic, strong) NSArray *    resp;" );
+                }
+            }
 			else
 			{
 				code.LINE( @"@property (nonatomic, strong) %@%@ *	resp;", prefix, rspKey );
