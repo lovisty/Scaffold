@@ -2475,24 +2475,6 @@ DEF_INT( TYPE_OBJECT,		6 )
 			}
 		}
 	}
-	else
-	{
-		for ( NSString * key in [NSArray arrayWithArray:dict.allKeys] )
-		{
-			if ( [key hasPrefix:@"GET "] || [key hasPrefix:@"POST "] || [key hasPrefix:@"PUT "] || [key hasPrefix:@"HEAD "] || [key hasPrefix:@"DELETE "] )
-			{
-				continue;
-			}
-			
-			SchemaModel * object = [SchemaModel parseKey:key value:[dict objectForKey:key] protocol:self];
-			if ( object )
-			{
-				[self.models addObject:object];
-				
-				[dict removeObjectForKey:key];
-			}
-		}
-	}
 	
 	NSDictionary * controller = [dict dictAtPath:@"api"];
 	if ( controller && controller.count )
@@ -2503,21 +2485,6 @@ DEF_INT( TYPE_OBJECT,		6 )
 			if ( object )
 			{
 				[self.controllers addObject:object];
-			}
-		}
-	}
-	else
-	{
-		for ( NSString * key in [NSArray arrayWithArray:dict.allKeys] )
-		{
-			SchemaController * object = [SchemaController parseKey:key value:[dict objectForKey:key] protocol:self];
-			if ( object )
-			{
-				[self.controllers addObject:object];
-				
-				[dict removeObjectForKey:key];
-				
-				//				VAR_DUMP( [object.response JSON] );
 			}
 		}
 	}
