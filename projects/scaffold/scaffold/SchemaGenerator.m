@@ -2445,6 +2445,8 @@ DEF_INT( TYPE_OBJECT,		6 )
         [self.imports addObject:import];
     }
     
+    self.mappings = className[@"mappings"];
+    
 	NSDictionary * enums = [dict dictAtPath:@"enum"];
 	if ( enums && enums.count )
 	{
@@ -2468,6 +2470,20 @@ DEF_INT( TYPE_OBJECT,		6 )
 	{
 		for ( NSString * key in model.allKeys )
 		{
+            NSArray *mappingKeys = self.mappings.allKeys;
+            if ([mappingKeys containsObject:key]) {
+                NSMutableDictionary *subModelDict = [[[NSMutableDictionary alloc] initWithDictionary:model[key]] autorelease];
+                NSDictionary *subMappingDict = self.mappings[key];
+                for (NSString *subModelKey in subModelDict) {
+                    if ([subMappingDict.allKeys containsObject:subModelKey]) {
+                        NSString *subModelValueString = subModelDict[subModelKey];
+                        [subModelDict removeObjectForKey:subModelKey];
+                        [subModelDict setValue:subModelValueString forKey:subMappingDict[subModelKey]];
+                    }
+                }
+                [model setValue:subModelDict forKey:key];
+            }
+            
 			SchemaModel * object = [SchemaModel parseKey:key value:[model objectForKey:key] protocol:self];
 			if ( object )
 			{

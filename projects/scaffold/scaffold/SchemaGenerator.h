@@ -199,6 +199,7 @@ AS_INT( TYPE_OBJECT )
 @property (nonatomic, retain) NSString *            modelSuperclass;
 @property (nonatomic, retain) NSString *            respSuperclass;
 @property (nonatomic, retain) NSString *            apiSuperclass;
+@property (nonatomic, retain) NSDictionary *        mappings;
 
 @property (nonatomic, retain) NSDictionary *		server;
 
