@@ -2474,7 +2474,7 @@ DEF_INT( TYPE_OBJECT,		6 )
             if ([mappingKeys containsObject:key]) {
                 NSMutableDictionary *subModelDict = [[[NSMutableDictionary alloc] initWithDictionary:model[key]] autorelease];
                 NSDictionary *subMappingDict = self.mappings[key];
-                for (NSString *subModelKey in subModelDict) {
+                for (NSString *subModelKey in model[key]) {
                     if ([subMappingDict.allKeys containsObject:subModelKey]) {
                         NSString *subModelValueString = subModelDict[subModelKey];
                         [subModelDict removeObjectForKey:subModelKey];
