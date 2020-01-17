@@ -1027,7 +1027,7 @@ DEF_INT( TYPE_OBJECT,		6 )
 {
 	if ( NO == self.isContainer )
 		return nil;
-	
+    
 	NSString *			prefix = self.protocol.prefix;
 	NSMutableString *	code = [NSMutableString string];
 	
@@ -1072,7 +1072,29 @@ DEF_INT( TYPE_OBJECT,		6 )
             code.LINE(@"\t\t\t};");
             code.LINE(@"}");
         }
-       
+        
+        NSDictionary *mappingsDict = self.protocol.mappings;
+        if ([mappingsDict.allKeys containsObject:self.className]) {
+            NSDictionary *subMappingsDict = mappingsDict[self.className];
+            if (subMappingsDict.allKeys.count) {
+                code.LINE(@"MAPPING_PROPERTY_METHOD");
+                code.LINE(@"{");
+                code.LINE(@"\treturn @{");
+                NSInteger i = 0;
+                for (NSString *key in subMappingsDict.allKeys) {
+                    i++;
+                    if (i == subMappingsDict.allKeys.count) {
+                        code.LINE(@"\t\t\t@\"%@\": @\"%@\"",subMappingsDict[key],key);
+                    }else{
+                        code.LINE(@"\t\t\t@\"%@\": @\"%@\",",subMappingsDict[key],key);
+                    }
+                }
+                
+                code.LINE(@"\t\t\t};");
+                code.LINE(@"}");
+                code.LINE( nil );
+            }
+        }
 		
 		if ( found )
 		{
